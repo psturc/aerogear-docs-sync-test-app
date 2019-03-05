@@ -3,6 +3,12 @@ const express = require('express')
 const { VoyagerServer, gql } = require('@aerogear/voyager-server')
 const { conflictHandler, strategies } = require('@aerogear/voyager-conflicts')
 const { PubSub } = require('graphql-subscriptions');
+const { KeycloakSecurityService } = require('@aerogear/voyager-keycloak')
+const fs = require('fs');
+const path = require('path');
+
+const keycloakConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, './keycloak.json')))
+const keycloakService = new KeycloakSecurityService(keycloakConfig)
 
 const pubSub = new PubSub();
 
@@ -94,10 +100,15 @@ const resolvers = {
 const server = VoyagerServer({
   typeDefs,
   resolvers
+}, {
+  securityService: keycloakService
 })
 
 //Connect the server to express
 const app = express()
+
+keycloakService.applyAuthMiddleware(app)
+
 server.applyMiddleware({ app })
 
 // app.listen(4000, () =>
@@ -115,6 +126,9 @@ server.applyMiddleware({ app })
   new SubscriptionServer ({
     execute,
     subscribe,
+    onConnect: async connectionParams => {
+      return await keycloakService.validateToken(connectionParams)
+    },
     schema: server.schema
   }, {
     server: httpServer,
