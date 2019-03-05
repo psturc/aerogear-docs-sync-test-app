@@ -6,6 +6,8 @@ const { PubSub } = require('graphql-subscriptions');
 const { KeycloakSecurityService } = require('@aerogear/voyager-keycloak')
 const fs = require('fs');
 const path = require('path');
+const metrics = require('@aerogear/voyager-metrics')
+const auditLogger = require('@aerogear/voyager-audit')
 
 const keycloakConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, './keycloak.json')))
 const keycloakService = new KeycloakSecurityService(keycloakConfig)
@@ -16,11 +18,20 @@ const pubSub = new PubSub();
 const typeDefs = gql`
   type Query {
     hello: String
+    uploads: [File]
+    getTasks: [Task]
   }
 
   type Mutation {
     createTask(title: String!): Task
     updateTask(id: Int!, title: String!, version: Int!): Task
+    singleUpload(file: Upload!): File!
+  }
+
+  type File {
+    filename: String!
+    mimetype: String!
+    encoding: String!
   }
 
   type Task {
@@ -38,6 +49,8 @@ const tasks = [{
   version: 1
 }];
 
+const files = [];
+
 function customResolutionStrategy(serverState, clientState) {
   return {
     title: `${serverState.title} ${clientState.title}`
@@ -49,7 +62,13 @@ const resolvers = {
   Query: {
     hello: (obj, args, context, info) => {
       return `Hello world`
-    }
+    },
+    uploads: (obj, args, context, info) => {
+      return files
+    },
+    getTasks: (obj, args, context, info) => {
+      return tasks
+    },
   },
   Mutation: {
     createTask: async (obj, args, context, info) => {
@@ -87,6 +106,19 @@ const resolvers = {
      tasks[clientData.id] = args;
   
       return tasks[clientData.id];
+    },
+    singleUpload: async (parent, { file }) => {
+      const { stream, filename, mimetype, encoding } = await file;
+      // Save file and return required metadata
+      const writeStream = fs.createWriteStream(filename);
+      stream.pipe(writeStream);
+      const fileRecord = {
+        filename,
+        mimetype,
+        encoding
+      };
+      files.push(fileRecord);
+      return fileRecord;
     }
   },
   Subscription: {
@@ -101,12 +133,15 @@ const server = VoyagerServer({
   typeDefs,
   resolvers
 }, {
-  securityService: keycloakService
+  securityService: keycloakService,
+  metrics,
+  auditLogger
 })
 
 //Connect the server to express
 const app = express()
 
+metrics.applyMetricsMiddlewares(app, { path: '/metrics' })
 keycloakService.applyAuthMiddleware(app)
 
 server.applyMiddleware({ app })
@@ -126,9 +161,9 @@ server.applyMiddleware({ app })
   new SubscriptionServer ({
     execute,
     subscribe,
-    onConnect: async connectionParams => {
-      return await keycloakService.validateToken(connectionParams)
-    },
+    // onConnect: async connectionParams => {
+    //   return await keycloakService.validateToken(connectionParams)
+    // },
     schema: server.schema
   }, {
     server: httpServer,
