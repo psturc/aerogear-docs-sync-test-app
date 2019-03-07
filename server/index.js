@@ -9,8 +9,17 @@ const path = require('path');
 const metrics = require('@aerogear/voyager-metrics')
 const auditLogger = require('@aerogear/voyager-audit')
 
-const keycloakConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, './keycloak.json')))
+const keycloakConfigPath = process.env.KEYCLOAK_CONFIG || path.resolve(__dirname, './keycloak.json')
+const keycloakConfig = readConfig(keycloakConfigPath)
 const keycloakService = new KeycloakSecurityService(keycloakConfig)
+
+function readConfig(path) {
+  try {
+    return JSON.parse(fs.readFileSync(path, 'utf8'))
+  } catch (e) {
+    console.error(`Warning: couldn't find config at ${path}`)
+  }
+}
 
 const pubSub = new PubSub();
 
@@ -140,7 +149,7 @@ const server = VoyagerServer({
   typeDefs,
   resolvers
 }, {
-  // securityService: keycloakService,
+  securityService: keycloakService,
   metrics,
   auditLogger
 })
@@ -149,13 +158,12 @@ const server = VoyagerServer({
 const app = express()
 
 metrics.applyMetricsMiddlewares(app, { path: '/metrics' })
-// keycloakService.applyAuthMiddleware(app)
+
+if (keycloakService) {
+  keycloakService.applyAuthMiddleware(app, { tokenEndpoint: true })
+}
 
 server.applyMiddleware({ app })
-
-// app.listen(4000, () =>
-//   console.log(`🚀 Server ready at http://localhost:4000/graphql`)
-// )
 
 const http = require('http')
 const { SubscriptionServer } = require('subscriptions-transport-ws')
@@ -164,13 +172,18 @@ const { execute, subscribe } = require('graphql');
 const httpServer = http.createServer(app)
 
 server.applyMiddleware({ app })
-  httpServer.listen(4000, () => {
+
+httpServer.listen(4000, () => {
   new SubscriptionServer ({
     execute,
     subscribe,
-    // onConnect: async connectionParams => {
-    //   return await keycloakService.validateToken(connectionParams)
-    // },
+    onConnect: async connectionParams => {
+      if (keycloakService) {
+        return await keycloakService.validateToken(connectionParams)
+      } else {
+        return true;
+      }
+    },
     schema: server.schema
   }, {
     server: httpServer,
