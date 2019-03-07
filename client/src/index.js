@@ -1,29 +1,12 @@
-// gql is a utility function that handles gql queries
-import gql from 'graphql-tag';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import App from './App';
+import * as serviceWorker from './serviceWorker';
 
-// createClient configures the Data Sync client based on options you provide
-import {createClient} from '@aerogear/voyager-client';
+ReactDOM.render(<App />, document.getElementById('root'));
 
-// For our client application, we will connect to the local service.
-let config = {
-  httpUrl: "http://localhost:4000/graphql",
-  wsUrl: "ws://localhost:4000/graphql",
-}
-
-async function helloWorld() {
-
-  // Actually create the client
-  let client = await createClient(config);
-
-  // Execute the hello query
-  client.query({
-      fetchPolicy: 'network-only',
-      query: gql`{ hello }`
-    })
-    //Print the response of the query
-    .then( ({data}) => {
-      console.log(data.hello)
-    });
-}
-
-helloWorld();
+// If you want your app to work offline and load faster, you can change
+// unregister() to register() below. Note this comes with some pitfalls.
+// Learn more about service workers: http://bit.ly/CRA-PWA
+serviceWorker.unregister();

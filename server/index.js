@@ -35,6 +35,7 @@ const typeDefs = gql`
   }
 
   type Task {
+    id: ID
     title: String
     version: Int
   }
@@ -67,14 +68,17 @@ const resolvers = {
       return files
     },
     getTasks: (obj, args, context, info) => {
-      return tasks
+      return tasks.map((task, index) => ({...task, id: index}))
     },
   },
   Mutation: {
     createTask: async (obj, args, context, info) => {
       args.version = 1;
       tasks.push(args)
-      const result = args;
+      const result = {
+        ...args,
+        id: (tasks.length - 1)
+      };
       pubSub.publish('TaskCreated', {
           taskCreated: result
         });
@@ -82,10 +86,11 @@ const resolvers = {
     },
     updateTask: async (obj, clientData, context, info) => {
       const args = {
+        id: clientData.id,
         title: clientData.title,
         version: clientData.version
       }
-      const task = { ...tasks[clientData.id] };
+      const task = { ...tasks[clientData.id], id: clientData.id };
 
      // 2. Conflict Detection using `VersionedObjectState`
      //    If the version number from the database does not match the one sent by the client
@@ -94,6 +99,7 @@ const resolvers = {
        const { resolvedState, response } = await conflictHandler.resolveOnServer(customResolutionStrategy, task, args)
       
        tasks[clientData.id] = resolvedState;
+       delete tasks[clientData.id].id;
 
        return response
      }
@@ -104,8 +110,9 @@ const resolvers = {
 
      // 4. Persist the update to the database and return it to the client
      tasks[clientData.id] = args;
+     delete tasks[clientData.id].id;
   
-      return tasks[clientData.id];
+      return args;
     },
     singleUpload: async (parent, { file }) => {
       const { stream, filename, mimetype, encoding } = await file;
@@ -133,7 +140,7 @@ const server = VoyagerServer({
   typeDefs,
   resolvers
 }, {
-  securityService: keycloakService,
+  // securityService: keycloakService,
   metrics,
   auditLogger
 })
@@ -142,7 +149,7 @@ const server = VoyagerServer({
 const app = express()
 
 metrics.applyMetricsMiddlewares(app, { path: '/metrics' })
-keycloakService.applyAuthMiddleware(app)
+// keycloakService.applyAuthMiddleware(app)
 
 server.applyMiddleware({ app })
 
