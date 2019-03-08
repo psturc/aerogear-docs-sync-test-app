@@ -11,7 +11,10 @@ const auditLogger = require('@aerogear/voyager-audit')
 
 const keycloakConfigPath = process.env.KEYCLOAK_CONFIG || path.resolve(__dirname, './keycloak.json')
 const keycloakConfig = readConfig(keycloakConfigPath)
-const keycloakService = new KeycloakSecurityService(keycloakConfig)
+let keycloakService;
+if (keycloakConfig) {
+  keycloakService = new KeycloakSecurityService(keycloakConfig)
+}
 
 function readConfig(path) {
   try {
@@ -89,7 +92,7 @@ const resolvers = {
         ...args,
         id: (tasks.length - 1).toString()
       };
-      pubSub.publish('TaskCreated', {
+      pubSub.publish('taskCreated', {
           taskCreated: result
         });
       return result
@@ -107,12 +110,15 @@ const resolvers = {
      //    If the version number from the database does not match the one sent by the client
      //    A conflict occurs
      if (conflictHandler.hasConflict(task, args)) {
-       const { resolvedState, response } = await conflictHandler.resolveOnServer(customResolutionStrategy, task, args)
+      //  const { resolvedState, response } = await conflictHandler.resolveOnServer(customResolutionStrategy, task, args)
       
-       tasks[id] = resolvedState;
-       delete tasks[id].id;
+      //  tasks[id] = resolvedState;
+      //  delete tasks[id].id;
 
-       return response
+      //  return response
+
+      const { response } = conflictHandler.resolveOnClient(task, args)
+      return response
      }
 
      // 3. Always call nextState before persisting the updated record.
@@ -141,7 +147,7 @@ const resolvers = {
   },
   Subscription: {
     taskCreated: {
-        subscribe: () => pubSub.asyncIterator('TaskCreated')
+        subscribe: () => pubSub.asyncIterator('taskCreated')
     }
   },
 }

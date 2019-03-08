@@ -6,18 +6,40 @@ import './App.css';
 import gql from 'graphql-tag';
 
 // createClient configures the Data Sync client based on options you provide
-import {createClient,createOptimisticResponse} from '@aerogear/voyager-client';
+import {createClient,createOptimisticResponse, WebNetworkStatus} from '@aerogear/voyager-client';
+
+
+
+let updateTaskConflictResolver = (serverData, clientData) => {
+  console.log('conflict resolver');
+  // return {
+  //   ...serverData,
+  //   title: serverData.title + ' ' + clientData.title
+  // };
+  return clientData;
+};
 
 // For our client application, we will connect to the local service.
 let config = {
   httpUrl: "http://localhost:4000/graphql",
   wsUrl: "ws://localhost:4000/graphql",
-  // mergeOfflineMutations: false
+  mergeOfflineMutations: false,
   offlineQueueListener: {
     onOperationEnqueued: console.log,
     onOperationSuccess: console.log,
     onOperationFailure: console.log,
     queueCleared: console.log
+  },
+  conflictStrategy: {
+    // strategies: {
+    //   "updateTask": updateTaskConflictResolver,
+    // },
+    default: updateTaskConflictResolver
+  },
+  conflictListener: {
+    conflictOccurred: function(operationName, resolvedData, server, client) {
+      console.log(`data: ${JSON.stringify(resolvedData)}, server: ${JSON.stringify(server)} client: ${JSON.stringify(client)} `);
+    }
   }
 }
 
@@ -51,6 +73,16 @@ const GET_TASKS = gql`
 }
 `;
 
+const TASK_ADDED_SUBSCRIPTION = gql`
+  subscription taskCreated {
+    taskCreated {
+      id
+      title
+      version
+    }
+  }
+`;
+
 let client;
 
 async function helloWorld() {
@@ -73,6 +105,32 @@ async function helloWorld() {
 
 function query() {
   client.query({ query: GET_TASKS, fetchPolicy: 'cache-first' }).then(({data}) => console.log(data.getTasks))
+}
+
+function watchQuery() {
+  const tasks = client.watchQuery({
+    query: GET_TASKS,
+    fetchPolicy: 'cache-first',
+      errorPolicy: 'none'
+  });
+
+  tasks.subscribeToMore({
+    document: TASK_ADDED_SUBSCRIPTION,
+    updateQuery: (prev, { subscriptionData }) => {
+      if(subscriptionData.data){
+        const newTask = subscriptionData.data.taskCreated;
+        if (prev.getTasks.find(task => task.id === newTask.id)) {
+          return prev;
+        } else {
+          return Object.assign({}, prev, {
+            getTasks: [...prev.getTasks, newTask]
+          });
+        }
+      }
+    },
+    onError: console.log
+  });
+  return tasks;
 }
 
 async function create() {
@@ -115,6 +173,19 @@ async function update() {
 
   await client.query({ query: GET_TASKS }).then(({data}) => console.log(data.getTasks))
 }
+
+const networkStatus = new WebNetworkStatus();
+
+networkStatus.onStatusChangeListener({
+  onStatusChange(networkInfo) {
+    const online = networkInfo.online;
+    if (online) {
+      client.watchQuery({
+        query: GET_TASKS
+      });
+    }
+  }
+});
 
 class App extends Component {
   render() {
@@ -172,6 +243,18 @@ class App extends Component {
             }}
           >
             Update task
+          </a>
+          <a
+            className="App-link"
+            href="https://reactjs.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => {
+              e.preventDefault();
+              watchQuery().subscribe(console.log);
+            }}
+          >
+            Watch
           </a>
         </header>
       </div>
