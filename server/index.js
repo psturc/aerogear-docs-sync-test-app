@@ -33,7 +33,7 @@ const typeDefs = gql`
 
   type Mutation {
     createTask(title: String!): Task
-    updateTask(id: Int!, title: String!, version: Int!): Task
+    updateTask(id: ID!, title: String!, version: Int!): Task
     singleUpload(file: Upload!): File!
   }
 
@@ -63,6 +63,7 @@ const files = [];
 
 function customResolutionStrategy(serverState, clientState) {
   return {
+    id: clientState.id,
     title: `${serverState.title} ${clientState.title}`
   }
 }
@@ -77,7 +78,7 @@ const resolvers = {
       return files
     },
     getTasks: (obj, args, context, info) => {
-      return tasks.map((task, index) => ({...task, id: index}))
+      return tasks.map((task, index) => ({...task, id: index.toString()}))
     },
   },
   Mutation: {
@@ -86,7 +87,7 @@ const resolvers = {
       tasks.push(args)
       const result = {
         ...args,
-        id: (tasks.length - 1)
+        id: (tasks.length - 1).toString()
       };
       pubSub.publish('TaskCreated', {
           taskCreated: result
@@ -99,7 +100,8 @@ const resolvers = {
         title: clientData.title,
         version: clientData.version
       }
-      const task = { ...tasks[clientData.id], id: clientData.id };
+      const id = Number(clientData.id)
+      const task = { ...tasks[id], id: clientData.id };
 
      // 2. Conflict Detection using `VersionedObjectState`
      //    If the version number from the database does not match the one sent by the client
@@ -107,8 +109,8 @@ const resolvers = {
      if (conflictHandler.hasConflict(task, args)) {
        const { resolvedState, response } = await conflictHandler.resolveOnServer(customResolutionStrategy, task, args)
       
-       tasks[clientData.id] = resolvedState;
-       delete tasks[clientData.id].id;
+       tasks[id] = resolvedState;
+       delete tasks[id].id;
 
        return response
      }
@@ -118,8 +120,8 @@ const resolvers = {
      conflictHandler.nextState(args)
 
      // 4. Persist the update to the database and return it to the client
-     tasks[clientData.id] = args;
-     delete tasks[clientData.id].id;
+     tasks[id] = { ...args };
+     delete tasks[id].id;
   
       return args;
     },

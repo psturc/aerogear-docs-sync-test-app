@@ -12,11 +12,28 @@ import {createClient,createOptimisticResponse} from '@aerogear/voyager-client';
 let config = {
   httpUrl: "http://localhost:4000/graphql",
   wsUrl: "ws://localhost:4000/graphql",
+  // mergeOfflineMutations: false
+  offlineQueueListener: {
+    onOperationEnqueued: console.log,
+    onOperationSuccess: console.log,
+    onOperationFailure: console.log,
+    queueCleared: console.log
+  }
 }
 
 const ADD_TASK = gql`
 mutation createTask($title: String!){
     createTask(title: $title) @onlineOnly {
+      id
+      title
+      version
+    }
+  }
+`;
+
+const UPDATE_TASK = gql`
+mutation updateTask($id: ID!, $title: String!, $version: Int!){
+  updateTask(id: $id, title: $title, version: $version) {
       id
       title
       version
@@ -88,6 +105,17 @@ async function create() {
   await client.query({ query: GET_TASKS }).then(({data}) => console.log(data.getTasks))
 }
 
+async function update() {
+  const { data: { getTasks } } = await client.query({ query: GET_TASKS })
+  const item = { ...getTasks[0], title: 'ccc' };
+
+  await client.mutate({
+    mutation: UPDATE_TASK, variables: item,
+  });
+
+  await client.query({ query: GET_TASKS }).then(({data}) => console.log(data.getTasks))
+}
+
 class App extends Component {
   render() {
     return (
@@ -132,6 +160,18 @@ class App extends Component {
             }}
           >
             Create task
+          </a>
+          <a
+            className="App-link"
+            href="https://reactjs.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => {
+              e.preventDefault();
+              update();
+            }}
+          >
+            Update task
           </a>
         </header>
       </div>
