@@ -8,7 +8,7 @@ import gql from 'graphql-tag';
 // createClient configures the Data Sync client based on options you provide
 import {createClient,createOptimisticResponse, WebNetworkStatus} from '@aerogear/voyager-client';
 
-const token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5UU84Rnh2S2d3VkxtNHVxaTJBUHQ5enhlZ1dTV2ZJZndFZXcxSUhKUk40In0.eyJqdGkiOiI1Y2FiMGZiZC04ZTRiLTQ5NmQtOWExMC02OTcwZjNjZGIwNDkiLCJleHAiOjE1NTIwNTc3NTIsIm5iZiI6MCwiaWF0IjoxNTUyMDU3NjkyLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjpbIm1hc3Rlci1yZWFsbSIsImFjY291bnQiXSwic3ViIjoiMzZiMmQzZmEtZjdjMS00ZWJlLThmYTEtMWEyZjRmNTgxM2RkIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidGVzdCIsImF1dGhfdGltZSI6MTU1MjA1NzU5OCwic2Vzc2lvbl9zdGF0ZSI6ImRiMDQzOTRhLTczNDYtNDYzYi1iMmVkLWZhMTA5ZWRjNmFiYSIsImFjciI6IjAiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwib2ZmbGluZV9hY2Nlc3MiLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctcmVhbG0iLCJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiJ9.AW3HyRpr37vvRh78XqkZYbQn-Nws4Y849y2S6iFSam8z7MP04pnTExl1boS56YKLRDiiNpSj353o-qU0IZkqSZcYqlmgyXF2ePxyKZLNIB_o2anCETB-_fVgxfrdt-PhmFgJ_M3wBe13PuFkKb4m3AnUrV1MXBHKlO-zTFiZe-LsMR75tjZ9EGL-ceJjllI2gRFocexmvpsiCcdQsTBS3VOJdTyPs6Z-TtIaVxhGdXDzXb8gDMFGPhC888ht4L2gla3NGX74wBQaQg8CrZ2FoR8tRFaQgkt0rg1Kn-R7OypjP09yFm0EY4I549yHg9UX6btpIm1OSzY7SpCLuP-SFQ";
+const token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5UU84Rnh2S2d3VkxtNHVxaTJBUHQ5enhlZ1dTV2ZJZndFZXcxSUhKUk40In0.eyJqdGkiOiI0ZDNhODZkMS0zYTg0LTQ3NGYtYTRhZC1iZTk4NGRjNTY0YWMiLCJleHAiOjE1NTIzMDcwNjQsIm5iZiI6MCwiaWF0IjoxNTUyMzA3MDA0LCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImQ2ZGI0YWE2LWI3NjMtNGZlZC04NTExLWU0NzEyNTVlNDQyOSIsInR5cCI6IkJlYXJlciIsImF6cCI6InRlc3QiLCJhdXRoX3RpbWUiOjE1NTIzMDU5MzMsInNlc3Npb25fc3RhdGUiOiIzODI0MjYxNi1lOWYwLTQwODctYTMzYy1iNDQwMzgyYTdiZjIiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6MzAwMCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InRlc3QifQ.Is73GMSgaORUjn14XcPJgBXX-n6_zqwLjCspUkwH4mcf3JqFMZ9ztuZ6Fs1ghEQOLYxpQZt3EwX56fNgte5ZHuZv5hoiKQBvC8FnHe6xBBF3CtAPbraQ961odVbi9iF_SEMGtaINrlAEjtC75iDgyIwlKCk9s0-evH6hN48rl0jjM9kOgZ8Z8JslM9lToEqSiKZVGr4UERuLKHZPos3jknJaUEDvUxFb96WbiOqa_46Ecne5vXs9xRkRy1ZWj3D67NxOKvlXhhrTivfsXEo4720CogQ9w8yGkpsRoAX81QERg0vHJ0FLx4DO9e2rxZoMiHpbRj3IrVZjokGP2VEBrw";
 
 
 let updateTaskConflictResolver = (serverData, clientData) => {
@@ -22,7 +22,7 @@ let updateTaskConflictResolver = (serverData, clientData) => {
 
 // For our client application, we will connect to the local service.
 let config = {
-  httpUrl: "http://localhost:4000/graphql",
+  httpUrl: "/graphql",
   wsUrl: "ws://localhost:4000/graphql",
   mergeOfflineMutations: false,
   offlineQueueListener: {
@@ -50,7 +50,17 @@ let config = {
       token: token
     }
   },
+  fileUpload: true,
+  auditLogging: true,
 }
+
+export const UPLOAD_FILE = gql`
+mutation singleUpload($file: Upload!) {
+  singleUpload(file: $file) {
+    filename
+  }
+}
+`;
 
 const ADD_TASK = gql`
 mutation createTask($title: String!){
@@ -183,6 +193,15 @@ async function update() {
   await client.query({ query: GET_TASKS }).then(({data}) => console.log(data.getTasks))
 }
 
+async function fileUpload(file) {
+  console.log(file);
+  const res = await client.mutate({
+    mutation: UPLOAD_FILE,
+    variables: { file }
+  });
+  console.log(res);
+}
+
 const networkStatus = new WebNetworkStatus();
 
 networkStatus.onStatusChangeListener({
@@ -265,6 +284,13 @@ class App extends Component {
           >
             Watch
           </a>
+          <input
+            type="file"
+            required
+            onChange={({ target: { validity, files: [file] } }) =>
+              validity.valid && fileUpload(file)
+            }
+          />
         </header>
       </div>
     );

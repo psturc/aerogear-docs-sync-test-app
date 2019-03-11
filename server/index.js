@@ -166,7 +166,7 @@ const server = VoyagerServer({
 //Connect the server to express
 const app = express()
 
-app.use(cors({ origin: '*' }))
+app.use(cors({credentials: true}))
 
 metrics.applyMetricsMiddlewares(app, { path: '/metrics' })
 
