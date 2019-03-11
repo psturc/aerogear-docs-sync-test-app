@@ -8,6 +8,7 @@ import gql from 'graphql-tag';
 // createClient configures the Data Sync client based on options you provide
 import {createClient,createOptimisticResponse, WebNetworkStatus} from '@aerogear/voyager-client';
 
+const token = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI5UU84Rnh2S2d3VkxtNHVxaTJBUHQ5enhlZ1dTV2ZJZndFZXcxSUhKUk40In0.eyJqdGkiOiI1Y2FiMGZiZC04ZTRiLTQ5NmQtOWExMC02OTcwZjNjZGIwNDkiLCJleHAiOjE1NTIwNTc3NTIsIm5iZiI6MCwiaWF0IjoxNTUyMDU3NjkyLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODEvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjpbIm1hc3Rlci1yZWFsbSIsImFjY291bnQiXSwic3ViIjoiMzZiMmQzZmEtZjdjMS00ZWJlLThmYTEtMWEyZjRmNTgxM2RkIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoidGVzdCIsImF1dGhfdGltZSI6MTU1MjA1NzU5OCwic2Vzc2lvbl9zdGF0ZSI6ImRiMDQzOTRhLTczNDYtNDYzYi1iMmVkLWZhMTA5ZWRjNmFiYSIsImFjciI6IjAiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwib2ZmbGluZV9hY2Nlc3MiLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctcmVhbG0iLCJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhZG1pbiJ9.AW3HyRpr37vvRh78XqkZYbQn-Nws4Y849y2S6iFSam8z7MP04pnTExl1boS56YKLRDiiNpSj353o-qU0IZkqSZcYqlmgyXF2ePxyKZLNIB_o2anCETB-_fVgxfrdt-PhmFgJ_M3wBe13PuFkKb4m3AnUrV1MXBHKlO-zTFiZe-LsMR75tjZ9EGL-ceJjllI2gRFocexmvpsiCcdQsTBS3VOJdTyPs6Z-TtIaVxhGdXDzXb8gDMFGPhC888ht4L2gla3NGX74wBQaQg8CrZ2FoR8tRFaQgkt0rg1Kn-R7OypjP09yFm0EY4I549yHg9UX6btpIm1OSzY7SpCLuP-SFQ";
 
 
 let updateTaskConflictResolver = (serverData, clientData) => {
@@ -40,7 +41,15 @@ let config = {
     conflictOccurred: function(operationName, resolvedData, server, client) {
       console.log(`data: ${JSON.stringify(resolvedData)}, server: ${JSON.stringify(server)} client: ${JSON.stringify(client)} `);
     }
-  }
+  },
+  authContextProvider: function() {
+    return {
+      header: {
+        "Authorization": `Bearer ${token}`
+      },
+      token: token
+    }
+  },
 }
 
 const ADD_TASK = gql`

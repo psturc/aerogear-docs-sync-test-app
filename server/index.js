@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const metrics = require('@aerogear/voyager-metrics')
 const auditLogger = require('@aerogear/voyager-audit')
+const cors = require('cors')
 
 const keycloakConfigPath = process.env.KEYCLOAK_CONFIG || path.resolve(__dirname, './keycloak.json')
 const keycloakConfig = readConfig(keycloakConfigPath)
@@ -164,6 +165,8 @@ const server = VoyagerServer({
 
 //Connect the server to express
 const app = express()
+
+app.use(cors({ origin: '*' }))
 
 metrics.applyMetricsMiddlewares(app, { path: '/metrics' })
 
